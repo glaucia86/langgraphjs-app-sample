@@ -1,7 +1,10 @@
 import { HumanMessage } from "@langchain/core/messages";
 import { EmailState } from "../state/EmailState";
 import { createLLMProvider } from "../../lib/llm";
+import { createContextLogger } from "../../lib/logger";
 import { z } from "zod";
+
+const logger = createContextLogger("classifyEmail");
 
 const ClassificationSchema = z.object({
   isSpam: z.boolean(),
@@ -49,7 +52,12 @@ export async function classifyEmail(state: EmailState): Promise<Partial<EmailSta
     const parsed = JSON.parse(responseText);
     const classification = ClassificationSchema.parse(parsed);
 
-    console.log(`Classificação: ${classification.isSpam ? 'SPAM' : 'LEGÍTIMO'}`);
+    logger.info("Email classificado", {
+      isSpam: classification.isSpam,
+      category: classification.emailCategory,
+      confidence: classification.confidence,
+      sender: email.sender
+    });
 
     return {
       isSpam: classification.isSpam,
@@ -63,11 +71,21 @@ export async function classifyEmail(state: EmailState): Promise<Partial<EmailSta
       executionPath: [...state.executionPath, 'classifyEmail'],
     };
   } catch (error) {
-    console.error('Erro na classificação:', error);
+    logger.error("Erro na classificação do email", {
+      error: error instanceof Error ? error.message : String(error),
+      sender: email.sender,
+      subject: email.subject
+    });
 
+    // Fallback para classificação básica
     const isSpam = email.subject.includes("!!!!") ||
                    email.body.toLowerCase().includes('ganhou') ||
                    email.body.toLowerCase().includes('prêmio');
+
+    logger.info("Usando classificação de fallback", {
+      isSpam,
+      sender: email.sender
+    });
 
     return {
       isSpam,
