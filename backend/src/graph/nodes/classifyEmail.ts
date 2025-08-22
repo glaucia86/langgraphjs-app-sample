@@ -71,10 +71,12 @@ export async function classifyEmail(state: EmailState): Promise<Partial<EmailSta
       executionPath: [...state.executionPath, 'classifyEmail'],
     };
   } catch (error) {
+    // Redact subject to avoid exposing sensitive information
+    const redactedSubject = email.subject ? "[REDACTED]" : null;
     logger.error("Erro na classificação do email", {
       error: error instanceof Error ? error.message : String(error),
       sender: email.sender,
-      subject: email.subject
+      subject: redactedSubject
     });
 
     // Fallback para classificação básica
