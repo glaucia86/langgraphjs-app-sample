@@ -1,11 +1,7 @@
 import { EmailState } from "../state/EmailState";
-import winston from "winston";
+import { createContextLogger } from "../../lib/logger";
 
-const logger = winston.createLogger({
-  level: "info",
-  format: winston.format.simple(),
-  transports: [new winston.transports.Console()],
-});
+const logger = createContextLogger("readEmail");
 
 export async function readEmail(state: EmailState): Promise<Partial<EmailState>> {
   const { email } = state;
