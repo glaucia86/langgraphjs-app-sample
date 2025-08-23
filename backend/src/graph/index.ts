@@ -6,6 +6,7 @@ import { handleSpam } from './nodes/handleSpam.js';
 import { draftResponse } from './nodes/draftResponse.js';
 import { notifyOwner } from './nodes/notifyOwner.js';
 import { routeEmail } from './routing.js';
+import { writeFileSync } from 'node:fs';
 
 // Criar o grafo de estados usando a API oficial
 const emailGraph = new StateGraph(EmailStateAnnotation)
@@ -41,3 +42,38 @@ const emailGraph = new StateGraph(EmailStateAnnotation)
 export const compiledGraph = emailGraph.compile();
 
 console.log('Grafo LangGraph compilado com sucesso!');
+
+// 🎨 FUNÇÃO PARA GERAR VISUALIZAÇÃO
+export async function generateGraphVisualization() {
+  try {
+    console.log('🎨 Gerando visualização do grafo...');
+    
+    // Obter o grafo compilado
+    const graph = compiledGraph.getGraph();
+    
+    // Gerar imagem PNG do grafo
+    const image = await graph.drawMermaidPng();
+    const arrayBuffer = await image.arrayBuffer();
+    
+    // Salvar a imagem
+    const filePath = "./graph-visualization.png";
+    writeFileSync(filePath, new Uint8Array(arrayBuffer));
+    
+    console.log(`Visualização salva em: ${filePath}`);
+    
+    // Retornar também o código Mermaid como string
+    const mermaidCode = graph.drawMermaid();
+    
+    return {
+      imagePath: filePath,
+      mermaidCode: mermaidCode
+    };
+    
+  } catch (error) {
+    console.error('Erro ao gerar visualização:', error);
+    return null;
+  }
+}
+
+// Gerar visualização automaticamente quando o servidor iniciar
+generateGraphVisualization();
